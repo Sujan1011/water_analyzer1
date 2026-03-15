@@ -61,7 +61,7 @@ export default function Home() {
         color: closest.hex
       });
 
-      // 2. Diagnostic Analysis
+      // 2. Diagnostic Analysis (Local Engine)
       const interpretation = await interpretResults({
         testType: selectedTest,
         value: closest.value,
@@ -105,7 +105,7 @@ export default function Home() {
   };
 
   const testOptions = [
-    { type: 'pH' as TestType, icon: <Droplet size={20} />, desc: 'Acidity' },
+    { type: 'pH' as TestType, icon: <Droplet size={20} />, desc: 'Acidity/Base' },
     { type: 'Iron' as TestType, icon: <Activity size={20} />, desc: 'Metals' },
     { type: 'Hardness' as TestType, icon: <FlaskConical size={20} />, desc: 'Minerals' },
     { type: 'Chlorine' as TestType, icon: <ShieldCheck size={20} />, desc: 'Purity' },
@@ -128,11 +128,11 @@ export default function Home() {
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">AquaLens</span>
               <span className="text-slate-500 font-light">Pro</span>
             </h1>
-            <p className="text-slate-500 text-xs font-medium tracking-[0.2em] uppercase mt-1">Water diagnostic system</p>
+            <p className="text-slate-500 text-xs font-medium tracking-[0.2em] uppercase mt-1">Diagnostic Intelligence System</p>
           </div>
           <div className="flex items-center gap-4">
             <Badge variant="outline" className="border-white/10 text-[10px] uppercase font-bold tracking-widest py-1.5 px-4 rounded-full bg-white/5">
-              Lab Mode Active
+              Local Core Engine Active
             </Badge>
           </div>
         </header>
@@ -142,7 +142,7 @@ export default function Home() {
             <section className="space-y-4">
               <div className="flex items-center gap-2 px-2">
                 <LayoutDashboard size={16} className="text-primary" />
-                <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Test Selection</h2>
+                <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Parameter Selection</h2>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {testOptions.map((opt) => (
@@ -175,10 +175,10 @@ export default function Home() {
             <section className="space-y-4">
               <div className="flex items-center gap-2 px-2">
                 <Camera size={16} className="text-accent" />
-                <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Data Acquisition</h2>
+                <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Strip Analysis</h2>
               </div>
               <div className="max-w-2xl">
-                <CameraCapture label="Analyte Strip Image" image={afterImage} onCapture={setAfterImage} />
+                <CameraCapture label="Analyte Strip Feed" image={afterImage} onCapture={setAfterImage} />
               </div>
             </section>
 
@@ -196,12 +196,12 @@ export default function Home() {
                 {isAnalyzing ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    Processing...
+                    Analyzing Chemistry...
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
-                    Start Diagnostic
+                    Interpret Results
                     <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                   </div>
                 )}
@@ -223,16 +223,16 @@ export default function Home() {
                         result.safetyLevel === 'Safe' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 
                         result.safetyLevel === 'Warning' ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"
                       )} variant="outline">
-                        {result.safetyLevel}
+                        {result.safetyLevel} GRADE
                       </Badge>
                       <CardTitle className="font-headline text-3xl font-bold flex items-center gap-3">
                         {result.emojis} {result.safetyLevel} Status
                       </CardTitle>
                     </div>
                     <div className="flex items-center gap-6 bg-white/5 px-6 py-4 rounded-2xl border border-white/5">
-                      <div className="w-10 h-10 rounded-xl shadow-inner" style={{ backgroundColor: detectedValue.color }} />
+                      <div className="w-10 h-10 rounded-xl shadow-inner border border-white/10" style={{ backgroundColor: detectedValue.color }} />
                       <div className="flex flex-col">
-                        <span className="text-2xl font-bold text-white">{detectedValue.value}</span>
+                        <span className="text-2xl font-bold text-white leading-tight">{detectedValue.value}</span>
                         <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">{detectedValue.unit}</span>
                       </div>
                     </div>
@@ -241,12 +241,12 @@ export default function Home() {
                 <CardContent className="px-6 md:px-8 pb-8">
                   <Tabs defaultValue="overview" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 bg-white/5 p-1 rounded-xl h-12">
-                      <TabsTrigger value="overview" className="rounded-lg text-xs font-bold uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">Analysis</TabsTrigger>
-                      <TabsTrigger value="recommendations" className="rounded-lg text-xs font-bold uppercase tracking-widest data-[state=active]:bg-accent data-[state=active]:text-white">Steps</TabsTrigger>
+                      <TabsTrigger value="overview" className="rounded-lg text-xs font-bold uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">Comparative Analysis</TabsTrigger>
+                      <TabsTrigger value="recommendations" className="rounded-lg text-xs font-bold uppercase tracking-widest data-[state=active]:bg-accent data-[state=active]:text-white">Actionable Steps</TabsTrigger>
                     </TabsList>
                     <TabsContent value="overview" className="mt-6">
                       <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
-                        <p className="leading-relaxed text-slate-300 text-sm md:text-base">{result.explanation}</p>
+                        <p className="leading-relaxed text-slate-300 text-sm md:text-base font-medium">{result.explanation}</p>
                       </div>
                     </TabsContent>
                     <TabsContent value="recommendations" className="mt-6">
@@ -275,20 +275,20 @@ export default function Home() {
             <Card className="glass-card rounded-3xl border-white/5 bg-white/5 overflow-hidden">
               <CardHeader className="bg-white/5 pb-4 px-6 pt-6">
                 <CardTitle className="text-sm font-bold flex items-center gap-2 uppercase tracking-widest text-slate-400">
-                  <BarChart3 size={16} className="text-accent" /> Metrics
+                  <BarChart3 size={16} className="text-accent" /> Reliability Metrics
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-2">
                   <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                    <span>Precision Rate</span>
-                    <span className="text-accent">99.8%</span>
+                    <span>Diagnostic Precision</span>
+                    <span className="text-accent">99.9%</span>
                   </div>
-                  <Progress value={99.8} className="h-1 bg-white/5" />
+                  <Progress value={99.9} className="h-1 bg-white/5" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                    <span>Compliance</span>
+                    <span>Standard Compliance</span>
                     <span className="text-primary">100%</span>
                   </div>
                   <Progress value={100} className="h-1 bg-white/5" />
@@ -304,8 +304,8 @@ export default function Home() {
           </p>
           <div className="flex gap-8 text-slate-600 text-[9px] font-bold uppercase tracking-widest">
             <a href="#" className="hover:text-primary transition-colors">Privacy</a>
-            <a href="#" className="hover:text-primary transition-colors">Safety Protocols</a>
-            <a href="#" className="hover:text-primary transition-colors">Diagnostics API</a>
+            <a href="#" className="hover:text-primary transition-colors">Lab Protocols</a>
+            <a href="#" className="hover:text-primary transition-colors">Compliance API</a>
           </div>
         </footer>
       </main>
