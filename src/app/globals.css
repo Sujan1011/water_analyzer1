@@ -1,28 +1,27 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 213 31% 91%;
-    --card: 222 47% 11%;
-    --card-foreground: 213 31% 91%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 213 31% 91%;
-    --primary: 248 54% 61%; /* Brighter purple for dark mode */
+    --background: 222 47% 4%;
+    --foreground: 213 31% 98%;
+    --card: 222 47% 6%;
+    --card-foreground: 213 31% 98%;
+    --popover: 222 47% 6%;
+    --popover-foreground: 213 31% 98%;
+    --primary: 248 54% 61%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 222 47% 20%;
+    --secondary: 222 47% 12%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 222 47% 20%;
+    --muted: 222 47% 12%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 191 75% 52%; /* Cyan */
+    --accent: 191 75% 52%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 222 47% 20%;
-    --input: 222 47% 20%;
+    --border: 222 47% 12%;
+    --input: 222 47% 12%;
     --ring: 248 54% 61%;
     --radius: 1rem;
   }
@@ -33,14 +32,30 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground selection:bg-primary/30;
+    @apply bg-background text-foreground selection:bg-primary/30 antialiased;
   }
 }
 
 .glass-card {
-  @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+  @apply bg-white/5 backdrop-blur-3xl border border-white/10 shadow-2xl;
 }
 
 .gradient-text {
   @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-white/20;
 }

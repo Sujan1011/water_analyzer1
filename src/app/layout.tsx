@@ -1,4 +1,3 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 
@@ -19,7 +18,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased bg-gradient-to-br from-[#667eea] to-[#764ba2] min-h-screen">
+      <body className="font-body antialiased bg-slate-950 text-slate-50 min-h-screen">
         {children}
       </body>
     </html>
