@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Camera, Upload, Trash2, CheckCircle, RefreshCcw, AlertCircle } from 'lucide-react';
+import { Camera, Upload, Trash2, CheckCircle, RefreshCcw, AlertCircle, FlipHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
   const { toast } = useToast();
   const [showCamera, setShowCamera] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,28 +37,36 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
     setShowCamera(false);
   }, []);
 
-  const startCamera = async () => {
+  const startCamera = async (mode: 'environment' | 'user' = facingMode) => {
+    // Stop any existing stream first
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+
     try {
-      // Check if navigator.mediaDevices is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API not supported in this browser.');
+        throw new Error('Camera API not supported in this environment.');
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      });
+      const constraints = {
+        video: {
+          facingMode: mode,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       streamRef.current = stream;
       setHasCameraPermission(true);
       setShowCamera(true);
 
-      // Important: Ensure the video tag is visible and ready before setting srcObject
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Ensure play is called for some mobile environments
+        videoRef.current.play().catch(e => console.error("Video play failed:", e));
       }
       
     } catch (err) {
@@ -66,8 +75,16 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       toast({
         variant: 'destructive',
         title: 'Camera Access Denied',
-        description: 'Please enable camera permissions in your browser settings and ensure you are using a secure (HTTPS) connection.',
+        description: 'Ensure camera permissions are granted in settings and you are on a secure (HTTPS) connection.',
       });
+    }
+  };
+
+  const toggleCamera = () => {
+    const newMode = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(newMode);
+    if (showCamera) {
+      startCamera(newMode);
     }
   };
 
@@ -75,8 +92,16 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
     if (videoRef.current && canvasRef.current) {
       const context = canvasRef.current.getContext('2d');
       if (context) {
+        // Match canvas size to actual video dimensions
         canvasRef.current.width = videoRef.current.videoWidth;
         canvasRef.current.height = videoRef.current.videoHeight;
+        
+        // Handle mirroring for front camera
+        if (facingMode === 'user') {
+          context.translate(canvasRef.current.width, 0);
+          context.scale(-1, 1);
+        }
+        
         context.drawImage(videoRef.current, 0, 0);
         const dataUrl = canvasRef.current.toDataURL('image/png');
         onCapture(dataUrl);
@@ -84,7 +109,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         
         toast({
           title: 'Capture Verified',
-          description: `${label} has been recorded.`,
+          description: `${label} documented successfully.`,
         });
       }
     }
@@ -105,7 +130,6 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
     }
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -126,7 +150,6 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         </div>
         
         <div className="relative w-full aspect-video bg-[#0a0e17] rounded-2xl flex items-center justify-center overflow-hidden border border-white/5 shadow-inner">
-          {/* Always render video to prevent race conditions during hardware access */}
           <video 
             ref={videoRef} 
             autoPlay 
@@ -134,7 +157,8 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
             playsInline 
             className={cn(
               "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
-              showCamera ? "opacity-100 z-10" : "opacity-0 -z-10"
+              showCamera ? "opacity-100 z-10" : "opacity-0 -z-10",
+              facingMode === 'user' && "scale-x-[-1]"
             )} 
           />
 
@@ -145,16 +169,15 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
               <div className="p-4 rounded-full bg-white/5 border border-white/5">
                 <Camera size={32} strokeWidth={1.5} />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Capture Feed</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Live Feed Inactive</p>
             </div>
           ) : null}
 
-          {/* Guidelines Overlay */}
           {showCamera && (
             <div className="absolute inset-0 border-2 border-primary/30 pointer-events-none z-30">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border border-white/20 rounded-xl" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-white/20 rounded-2xl" />
               <div className="absolute bottom-4 left-0 right-0 text-center">
-                <span className="text-[8px] uppercase tracking-widest bg-black/60 px-2 py-1 rounded-full text-white/70">Align strip within center frame</span>
+                <span className="text-[8px] uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-full text-white/90">Center test analyte in frame</span>
               </div>
             </div>
           )}
@@ -169,9 +192,9 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         {hasCameraPermission === false && (
           <Alert variant="destructive" className="bg-rose-500/10 border-rose-500/20 text-rose-400">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle className="text-xs font-bold uppercase tracking-widest">Access Required</AlertTitle>
+            <AlertTitle className="text-xs font-bold uppercase tracking-widest">Android Access Required</AlertTitle>
             <AlertDescription className="text-[10px]">
-              Camera blocked. Please check your browser settings or site permissions and refresh the page.
+              Camera access is restricted. Check browser/app permissions and ensure site is served over HTTPS.
             </AlertDescription>
           </Alert>
         )}
@@ -182,9 +205,9 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
               <Button 
                 variant="secondary" 
                 className="flex-1 h-12 rounded-xl bg-white/10 hover:bg-white/20 text-white border-0 transition-all active:scale-95 text-xs font-bold uppercase tracking-widest" 
-                onClick={startCamera}
+                onClick={() => startCamera()}
               >
-                <Camera className="mr-2 h-4 w-4" /> Camera
+                <Camera className="mr-2 h-4 w-4" /> Open Camera
               </Button>
               <Button 
                 variant="secondary" 
@@ -198,6 +221,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
                 ref={fileInputRef} 
                 className="hidden" 
                 accept="image/*" 
+                capture="environment"
                 onChange={handleFileUpload} 
               />
             </>
@@ -211,6 +235,15 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
                 onClick={captureFrame}
               >
                 Capture Frame
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-12 w-12 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10"
+                onClick={toggleCamera}
+                title="Switch Camera"
+              >
+                <FlipHorizontal size={16} />
               </Button>
               <Button 
                 variant="outline" 
