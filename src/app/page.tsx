@@ -313,7 +313,7 @@ export default function Home() {
         <footer className="mt-8 mb-4 flex flex-col items-center gap-6">
           <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           <div className="flex flex-col md:flex-row items-center justify-between w-full gap-4 text-slate-500 text-[10px] md:text-xs uppercase tracking-[0.2em]">
-            <p>© 2024 AquaLens Pro Systems • Laboratory Grade Diagnostics</p>
+            <p>© 2024 developed by Suruti Sona Lab</p>
             <div className="flex gap-8">
               <a href="#" className="hover:text-primary transition-colors">Privacy Protcol</a>
               <a href="#" className="hover:text-primary transition-colors">Documentation</a>
