@@ -38,20 +38,27 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
 
   const startCamera = async () => {
     try {
+      // Check if navigator.mediaDevices is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported in this browser.');
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
       });
       
       streamRef.current = stream;
       setHasCameraPermission(true);
       setShowCamera(true);
 
-      // We use a small timeout to ensure the video element is ready if it was hidden
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      }, 100);
+      // Important: Ensure the video tag is visible and ready before setting srcObject
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
       
     } catch (err) {
       console.error('Camera Access Error:', err);
@@ -59,7 +66,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       toast({
         variant: 'destructive',
         title: 'Camera Access Denied',
-        description: 'Please enable camera permissions in your browser settings to use this feature.',
+        description: 'Please enable camera permissions in your browser settings and ensure you are using a secure (HTTPS) connection.',
       });
     }
   };
@@ -74,6 +81,11 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         const dataUrl = canvasRef.current.toDataURL('image/png');
         onCapture(dataUrl);
         stopCamera();
+        
+        toast({
+          title: 'Capture Verified',
+          description: `${label} has been recorded.`,
+        });
       }
     }
   };
@@ -84,6 +96,10 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       const reader = new FileReader();
       reader.onloadend = () => {
         onCapture(reader.result as string);
+        toast({
+          title: 'Upload Verified',
+          description: `${label} image loaded successfully.`,
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -155,7 +171,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
             <AlertCircle className="h-4 w-4" />
             <AlertTitle className="text-xs font-bold uppercase tracking-widest">Access Required</AlertTitle>
             <AlertDescription className="text-[10px]">
-              Camera blocked. Please update site settings and refresh.
+              Camera blocked. Please check your browser settings or site permissions and refresh the page.
             </AlertDescription>
           </Alert>
         )}
