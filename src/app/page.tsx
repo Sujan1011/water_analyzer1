@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FlaskConical, Droplet, Activity, ShieldCheck, Info, BarChart3, History, Sparkles, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { FlaskConical, Droplet, Activity, ShieldCheck, Info, BarChart3, History, Sparkles, ChevronRight, LayoutDashboard, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,8 +15,11 @@ import { HistoryTable, type TestResult } from '@/components/history-table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 
 export default function Home() {
+  const { toast } = useToast();
   const [selectedTest, setSelectedTest] = useState<TestType | null>(null);
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [afterImage, setAfterImage] = useState<string | null>(null);
@@ -28,17 +31,29 @@ export default function Home() {
   useEffect(() => {
     const saved = localStorage.getItem('aqua-history');
     if (saved) {
-      setHistory(JSON.parse(saved));
+      try {
+        setHistory(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse history');
+      }
     }
   }, []);
 
   const handleAnalyze = async () => {
-    if (!selectedTest || !afterImage) return;
+    if (!selectedTest || !afterImage) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Data',
+        description: 'Please select a test type and capture/upload an analyte image.',
+      });
+      return;
+    }
 
     setIsAnalyzing(true);
     setResult(null);
 
     try {
+      // 1. Image Analysis (Client-side)
       const [r, g, b] = await getDominantColor(afterImage);
       const closest = findClosestColor(selectedTest, r, g, b);
       
@@ -48,6 +63,7 @@ export default function Home() {
         color: closest.hex
       });
 
+      // 2. AI Interpretation (Server-side action)
       const interpretation = await interpretResults({
         testType: selectedTest,
         value: closest.value,
@@ -57,8 +73,9 @@ export default function Home() {
 
       setResult(interpretation);
 
+      // 3. Save to History
       const newHistoryItem: TestResult = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 11),
         timestamp: Date.now(),
         type: selectedTest,
         value: closest.value,
@@ -72,8 +89,18 @@ export default function Home() {
       setHistory(updatedHistory);
       localStorage.setItem('aqua-history', JSON.stringify(updatedHistory));
 
+      toast({
+        title: 'Analysis Complete',
+        description: `Successfully analyzed ${selectedTest} levels.`,
+      });
+
     } catch (error) {
       console.error('Analysis failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'The AI was unable to interpret the result. Please try again with a clearer photo.',
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -88,6 +115,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0a0e17] text-slate-100 overflow-x-hidden font-body">
+      <Toaster />
+      
       {/* Dynamic Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary rounded-full blur-[120px]" />
@@ -327,4 +356,4 @@ export default function Home() {
 }
 
 // Helper to avoid interface mismatch in main component
-CameraCapture.Icon = CameraCapture.Icon || Activity;
+CameraCapture.Icon = Activity;
