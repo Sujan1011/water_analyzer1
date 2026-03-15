@@ -27,21 +27,28 @@ const WaterQualityTestOutputSchema = z.object({
 });
 export type WaterQualityTestOutput = z.infer<typeof WaterQualityTestOutputSchema>;
 
-export async function interpretWaterQualityResults(input: WaterQualityTestInput): Promise<WaterQualityTestOutput> {
-  return dynamicInterpretiveResultsFlow(input);
-}
-
 const interpretWaterQualityPrompt = ai.definePrompt({
   name: 'interpretWaterQualityPrompt',
   input: { schema: WaterQualityTestInputSchema },
   output: { schema: WaterQualityTestOutputSchema },
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+    ],
+  },
   system: `You are an expert water quality analyst. You are provided with sensor data from a chemical test strip. 
 Your goal is to provide a concise, scientific analysis and safety classification.
-Guidelines:
-1. pH: Safe (6.5-8.5), Warning (6.0-6.4 or 8.6-9.0), Critical (<6.0 or >9.0).
-2. Iron (Fe): Safe (<0.3 mg/L), Warning (0.3-1.0 mg/L), Critical (>1.0 mg/L).
-3. Hardness: Safe (<120 mg/L), Warning (121-180 mg/L), Critical (>180 mg/L).
-4. Chlorine: Safe (<2.0 mg/L), Warning (2.0-4.0 mg/L), Critical (>4.0 mg/L).`,
+
+Reference Standards:
+- pH: Safe (6.5-8.5), Warning (6.0-6.4 or 8.6-9.0), Critical (<6.0 or >9.0).
+- Iron (Fe): Safe (<0.3 mg/L), Warning (0.3-1.0 mg/L), Critical (>1.0 mg/L).
+- Hardness: Safe (<120 mg/L), Warning (121-180 mg/L), Critical (>180 mg/L).
+- Chlorine: Safe (<2.0 mg/L), Warning (2.0-4.0 mg/L), Critical (>4.0 mg/L).
+
+You MUST return a valid JSON object matching the requested schema.`,
   prompt: `Analyze the following water quality test result:
 - Test Module: {{{testType}}}
 - Detected Concentration: {{{value}}} {{{unit}}}
@@ -63,12 +70,16 @@ const dynamicInterpretiveResultsFlow = ai.defineFlow(
     try {
       const { output } = await interpretWaterQualityPrompt(input);
       if (!output) {
-        throw new Error('AI Model returned empty response.');
+        throw new Error('The AI model failed to generate a structured response. This might be due to safety filters or a model timeout.');
       }
       return output;
-    } catch (err) {
-      console.error('Flow error:', err);
-      throw new Error(`AI interpretation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } catch (err: any) {
+      console.error('Flow internal error:', err);
+      throw new Error(err.message || 'The water quality analysis flow encountered an unexpected error.');
     }
   }
 );
+
+export async function interpretWaterQualityResults(input: WaterQualityTestInput): Promise<WaterQualityTestOutput> {
+  return dynamicInterpretiveResultsFlow(input);
+}

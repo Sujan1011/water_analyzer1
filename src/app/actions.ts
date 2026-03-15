@@ -5,9 +5,14 @@ import { interpretWaterQualityResults, type WaterQualityTestInput, type WaterQua
 
 export async function interpretResults(input: WaterQualityTestInput): Promise<WaterQualityTestOutput> {
   try {
-    return await interpretWaterQualityResults(input);
-  } catch (error) {
-    console.error('GenAI Error:', error);
-    throw new Error('Failed to generate interpretation.');
+    const result = await interpretWaterQualityResults(input);
+    return result;
+  } catch (error: any) {
+    // Log the actual error for server-side debugging
+    console.error('GenAI Action Error:', error);
+    
+    // Throw a descriptive error that includes the underlying message if available
+    const message = error instanceof Error ? error.message : 'Unknown interpretation error';
+    throw new Error(`AI Analysis Failed: ${message}`);
   }
 }
