@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Camera, Upload, Trash2, CheckCircle, RefreshCcw, FlipHorizontal } from 'lucide-react';
+import { Camera, Upload, Trash2, CheckCircle, RefreshCcw, FlipHorizontal, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface CameraCaptureProps {
   label: string;
@@ -19,6 +20,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
   const { toast } = useToast();
   const [isActive, setIsActive] = useState(false);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,7 +38,16 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
   }, []);
 
   const startCamera = async (mode: 'environment' | 'user' = facingMode) => {
-    // Clean up existing stream
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Hardware Access Denied',
+        description: 'Your browser or app wrapper does not support live camera streaming. Please use the "System Cam" button instead.',
+      });
+      return;
+    }
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
     }
@@ -53,19 +64,20 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
+      setHasCameraPermission(true);
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Explicitly play for mobile compatibility
         await videoRef.current.play();
       }
       setIsActive(true);
     } catch (err) {
       console.error('Camera Access Error:', err);
+      setHasCameraPermission(false);
       toast({
         variant: 'destructive',
-        title: 'Camera Error',
-        description: 'Could not access the camera. Ensure you are on HTTPS and have granted permissions.',
+        title: 'Camera Blocked',
+        description: 'Could not access the live feed. This is common in Android apps. Please use the "System Cam / Upload" button.',
       });
       setIsActive(false);
     }
@@ -110,8 +122,8 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       reader.onloadend = () => {
         onCapture(reader.result as string);
         toast({
-          title: 'Image Loaded',
-          description: `${label} documented.`,
+          title: 'Documented',
+          description: `${label} captured via system camera.`,
         });
       };
       reader.readAsDataURL(file);
@@ -132,13 +144,12 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         <div className="flex flex-col gap-1 px-1">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-headline font-bold uppercase tracking-widest text-slate-400">{label}</h3>
-            {image && <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-400 border-0 h-5 px-2 text-[8px]">CAPTURED</Badge>}
+            {image && <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-400 border-0 h-5 px-2 text-[8px]">VALIDATED</Badge>}
           </div>
           {description && <p className="text-[10px] text-slate-500 font-medium">{description}</p>}
         </div>
         
         <div className="relative w-full aspect-video bg-[#05070a] rounded-2xl flex items-center justify-center overflow-hidden border border-white/5 shadow-inner">
-          {/* Always render video to prevent race conditions with refs */}
           <video 
             ref={videoRef} 
             autoPlay 
@@ -154,17 +165,23 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
           {image ? (
             <img src={image} alt={label} className="w-full h-full object-cover animate-in fade-in duration-300 relative z-20" />
           ) : !isActive ? (
-            <div className="flex flex-col items-center gap-3 text-slate-600 transition-colors group-hover:text-slate-500">
+            <div className="flex flex-col items-center gap-3 text-slate-600 px-6 text-center">
               <div className="p-4 rounded-full bg-white/5 border border-white/5">
                 <Camera size={32} strokeWidth={1.5} />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Ready for documentation</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em]">Android App Mode: Use System Cam for best results</p>
             </div>
           ) : null}
 
-          {isActive && !image && (
-            <div className="absolute inset-0 border-2 border-primary/20 pointer-events-none z-30">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-white/10 rounded-2xl" />
+          {hasCameraPermission === false && !image && !isActive && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-6">
+              <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive-foreground">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle className="text-xs font-bold uppercase tracking-wider">Access Restricted</AlertTitle>
+                <AlertDescription className="text-[10px] leading-relaxed">
+                  The live feed is blocked by the app wrapper. Use the <b>System Cam</b> button below to take a photo.
+                </AlertDescription>
+              </Alert>
             </div>
           )}
 
@@ -175,23 +192,25 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
           )}
         </div>
 
-        <div className="flex gap-3 w-full">
+        <div className="flex flex-col gap-3 w-full">
           {!image && !isActive && (
             <>
               <Button 
                 variant="secondary" 
-                className="flex-1 h-12 rounded-xl bg-white/10 hover:bg-white/20 text-white border-0 transition-all text-[10px] font-bold uppercase tracking-widest" 
-                onClick={() => startCamera()}
-              >
-                <Camera className="mr-2 h-4 w-4 text-primary" /> Live Feed
-              </Button>
-              <Button 
-                variant="secondary" 
-                className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-white border-0 transition-all text-[10px] font-bold uppercase tracking-widest" 
+                className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-white border-0 transition-all text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20" 
                 onClick={() => fileInputRef.current?.click()}
               >
-                <Upload className="mr-2 h-4 w-4" /> System Cam / Upload
+                <Upload className="mr-2 h-5 w-5" /> Open System Camera
               </Button>
+              
+              <Button 
+                variant="ghost" 
+                className="w-full h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 border-0 transition-all text-[9px] font-bold uppercase tracking-widest" 
+                onClick={() => startCamera()}
+              >
+                <Camera className="mr-2 h-4 w-4" /> Try Live Feed
+              </Button>
+              
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -207,10 +226,10 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
             <div className="flex gap-2 w-full">
               <Button 
                 variant="default" 
-                className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-xl text-[10px] font-bold uppercase tracking-widest" 
+                className="flex-1 h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl text-[10px] font-bold uppercase tracking-widest" 
                 onClick={captureFrame}
               >
-                Capture Photo
+                Snap Photo
               </Button>
               <Button 
                 variant="outline" 
