@@ -34,49 +34,40 @@ const interpretWaterQualityPrompt = ai.definePrompt({
   name: 'interpretWaterQualityPrompt',
   input: { schema: WaterQualityTestInputSchema },
   output: { schema: WaterQualityTestOutputSchema },
-  prompt: `You are an expert water quality analyst. Your task is to provide a scientific explanation, practical recommendations, and classify the safety level for a given water quality test result. Use precise language and ensure the recommendations are actionable. Also, provide a single emoji corresponding to the safety level.
+  prompt: `You are an expert water quality analyst. Your task is to provide a scientific explanation, practical recommendations, and classify the safety level for a given water quality test result.
 
-Here are the water quality test details:
-Test Type: {{{testType}}}
-Detected Value: {{{value}}} {{{unit}}}
-Detected Color: {{{colorDetected}}}
+Input Data:
+- Test Type: {{{testType}}}
+- Detected Value: {{{value}}} {{{unit}}}
+- Detected Color: {{{colorDetected}}}
 
-Consider the following general guidelines for safety levels (you may refine based on specific context):
+Analysis Guidelines:
 
-{{#eq testType 'pH'}}
-  pH (potential of Hydrogen) measures the acidity or alkalinity of water. A neutral pH is around 7.0.
-  - Critical (🔴): pH < 6.5 (acidic, can corrode pipes, leach heavy metals) or pH > 8.5 (basic, can cause scale buildup, affect taste).
-  - Warning (⚠️): pH 6.5 - 7.5 is ideal for most purposes. pH between 6.5 and 7.5 is generally safe. Values slightly outside this range (e.g., 6.0-6.4 or 7.6-8.0) might be concerning for specific uses.
-  - Safe (✅): pH 6.5 - 7.5 is generally considered safe and optimal for drinking water and most aquatic life.
-{{/eq}}
+1. pH:
+   - Safe (✅): 6.5 - 8.5. Optimal for drinking and pipes.
+   - Warning (⚠️): 6.0 - 6.4 or 8.6 - 9.0. Slightly corrosive or scaling.
+   - Critical (🔴): < 6.0 or > 9.0. Highly corrosive or severe scale/bitter taste.
 
-{{#eq testType 'Iron'}}
-  Iron (Fe) in water can cause staining, taste issues, and promote bacterial growth. It's measured in milligrams per liter (mg/L).
-  - Critical (🔴): Iron > 1.0 mg/L (severe staining, metallic taste, potential health concerns over long-term exposure for very high levels).
-  - Warning (⚠️): Iron 0.3 - 1.0 mg/L (noticeable staining, taste/odor issues, not acutely harmful but undesirable).
-  - Safe (✅): Iron < 0.3 mg/L (generally acceptable, minimal issues).
-{{/eq}}
+2. Iron (Fe):
+   - Safe (✅): < 0.3 mg/L. Minimal staining or taste.
+   - Warning (⚠️): 0.3 - 1.0 mg/L. Noticeable orange/brown staining and metallic taste.
+   - Critical (🔴): > 1.0 mg/L. Severe staining, plumbing deposits, and strong metallic taste.
 
-{{#eq testType 'Hardness'}}
-  Water hardness is primarily caused by dissolved calcium and magnesium. It's typically measured in mg/L as CaCO3.
-  - Critical (🔴): Hardness > 180 mg/L (Very Hard/Extremely Hard/Severe - significant scale buildup, soap scum, reduced appliance efficiency).
-  - Warning (⚠️): Hardness 60 - 180 mg/L (Moderately Hard/Hard - some scale buildup, increased soap usage).
-  - Safe (✅): Hardness < 60 mg/L (Very Soft/Soft - minimal issues, though very soft water can be corrosive).
-{{/eq}}
+3. Hardness (CaCO3):
+   - Safe (✅): < 60 mg/L (Soft) or 60-120 mg/L (Moderate). Generally fine.
+   - Warning (⚠️): 121 - 180 mg/L (Hard). Scaling on fixtures, more soap required.
+   - Critical (🔴): > 180 mg/L (Very Hard). Severe scaling, appliance damage, soap scum.
 
-{{#eq testType 'Chlorine'}}
-  Chlorine is often used as a disinfectant. While necessary for sanitation, high levels can be harmful and affect taste.
-  - Critical (🔴): Chlorine > 4.0 mg/L (can cause health issues, very strong taste/odor).
-  - Warning (⚠️): Chlorine 0.5 - 4.0 mg/L (acceptable for disinfection, but higher end may cause taste/odor issues or irritation).
-  - Safe (✅): Chlorine < 0.5 mg/L (generally acceptable, though very low levels might indicate insufficient disinfection).
-{{/eq}}
+4. Chlorine:
+   - Safe (✅): < 2.0 mg/L. Standard disinfection levels.
+   - Warning (⚠️): 2.0 - 4.0 mg/L. Strong odor/taste, potential skin irritation.
+   - Critical (🔴): > 4.0 mg/L. Exceeds EPA maximum residual disinfectant level goal.
 
-Based on the provided details and the general guidelines, provide:
-1. A scientific explanation of what the detected value means for water quality.
-2. Practical recommendations for action or further investigation.
-3. The safety level classification (Safe, Warning, Critical).
-4. A single emoji (✅, ⚠️, 🔴) that best represents the safety level.
-`,
+Tasks:
+1. Provide a detailed scientific explanation of the value for the specific test type.
+2. Offer practical, actionable advice.
+3. Classify the result (Safe, Warning, Critical) based on the guidelines above.
+4. Select the matching emoji.`,
 });
 
 const dynamicInterpretiveResultsFlow = ai.defineFlow(
