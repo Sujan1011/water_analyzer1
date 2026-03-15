@@ -33,14 +33,14 @@ const interpretWaterQualityPrompt = ai.definePrompt({
   output: { schema: WaterQualityTestOutputSchema },
   config: {
     safetySettings: [
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
     ],
   },
-  system: `You are an expert water quality analyst. You are provided with sensor data from a chemical test strip. 
-Your goal is to provide a concise, scientific analysis and safety classification.
+  system: `You are an expert water quality analyst. You are provided with chemical test strip data. 
+Provide a concise, scientific analysis and safety classification based on international water standards.
 
 Reference Standards:
 - pH: Safe (6.5-8.5), Warning (6.0-6.4 or 8.6-9.0), Critical (<6.0 or >9.0).
@@ -48,16 +48,16 @@ Reference Standards:
 - Hardness: Safe (<120 mg/L), Warning (121-180 mg/L), Critical (>180 mg/L).
 - Chlorine: Safe (<2.0 mg/L), Warning (2.0-4.0 mg/L), Critical (>4.0 mg/L).
 
-You MUST return a valid JSON object matching the requested schema.`,
+You MUST return a valid JSON object matching the requested schema. Do not include any markdown formatting in your response.`,
   prompt: `Analyze the following water quality test result:
-- Test Module: {{{testType}}}
-- Detected Concentration: {{{value}}} {{{unit}}}
-- Chromatic Data: {{{colorDetected}}}
+- Parameter: {{{testType}}}
+- Concentration: {{{value}}} {{{unit}}}
+- Strip Color: {{{colorDetected}}}
 
-Tasks:
-1. Formulate a scientific explanation.
-2. Provide specific mitigation or maintenance recommendations.
-3. Classify safety and choose the corresponding emoji (✅, ⚠️, 🔴).`,
+Required Tasks:
+1. Explain the scientific significance of this specific concentration.
+2. Provide actionable maintenance or treatment steps.
+3. Classify the status as Safe, Warning, or Critical.`,
 });
 
 const dynamicInterpretiveResultsFlow = ai.defineFlow(
@@ -67,16 +67,11 @@ const dynamicInterpretiveResultsFlow = ai.defineFlow(
     outputSchema: WaterQualityTestOutputSchema,
   },
   async (input) => {
-    try {
-      const { output } = await interpretWaterQualityPrompt(input);
-      if (!output) {
-        throw new Error('The AI model failed to generate a structured response. This might be due to safety filters or a model timeout.');
-      }
-      return output;
-    } catch (err: any) {
-      console.error('Flow internal error:', err);
-      throw new Error(err.message || 'The water quality analysis flow encountered an unexpected error.');
+    const { output } = await interpretWaterQualityPrompt(input);
+    if (!output) {
+      throw new Error('The AI model failed to generate a response. This may be due to safety filters or a model timeout.');
     }
+    return output;
   }
 );
 

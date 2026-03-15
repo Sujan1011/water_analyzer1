@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FlaskConical, Droplet, Activity, ShieldCheck, Info, BarChart3, History, Sparkles, ChevronRight, LayoutDashboard, AlertCircle } from 'lucide-react';
+import { FlaskConical, Droplet, Activity, ShieldCheck, Info, BarChart3, History, Sparkles, ChevronRight, LayoutDashboard, AlertCircle, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,7 +44,7 @@ export default function Home() {
       toast({
         variant: 'destructive',
         title: 'Missing Data',
-        description: 'Please select a test type and capture/upload an analyte image.',
+        description: 'Please select a test type and capture an analyte image.',
       });
       return;
     }
@@ -94,12 +94,12 @@ export default function Home() {
         description: `Successfully analyzed ${selectedTest} levels.`,
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Analysis failed:', error);
       toast({
         variant: 'destructive',
         title: 'Analysis Failed',
-        description: 'The AI was unable to interpret the result. Please try again with a clearer photo.',
+        description: error.message || 'The AI was unable to interpret the result. Please try again with a clearer photo.',
       });
     } finally {
       setIsAnalyzing(false);
@@ -124,7 +124,6 @@ export default function Home() {
       </div>
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 py-6 md:py-12 flex flex-col gap-8 md:gap-12">
-        {/* Navbar-like Header */}
         <header className="flex flex-col md:flex-row items-center justify-between gap-6 glass-card p-6 rounded-3xl">
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
             <h1 className="text-3xl md:text-5xl font-headline font-bold flex items-center gap-3">
@@ -142,13 +141,8 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Desktop Layout Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-          
-          {/* Main Controls - 8 columns */}
           <div className="xl:col-span-8 space-y-8">
-            
-            {/* Step 1: Selection */}
             <section className="space-y-4">
               <div className="flex items-center gap-2 px-2">
                 <LayoutDashboard size={18} className="text-primary" />
@@ -182,10 +176,9 @@ export default function Home() {
               </div>
             </section>
 
-            {/* Step 2: Capture */}
             <section className="space-y-4">
               <div className="flex items-center gap-2 px-2">
-                <CameraCapture.Icon size={18} className="text-accent" />
+                <Camera size={18} className="text-accent" />
                 <h2 className="text-lg font-headline font-bold uppercase tracking-widest text-slate-400">02. Visual Data Input</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -194,7 +187,6 @@ export default function Home() {
               </div>
             </section>
 
-            {/* Step 3: Action */}
             <div className="flex flex-col items-center gap-6 pt-4">
               <Button
                 disabled={!selectedTest || !afterImage || isAnalyzing}
@@ -230,7 +222,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* Result Area */}
             {result && detectedValue && (
               <Card className="glass-card rounded-3xl overflow-hidden border-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className={cn(
@@ -285,7 +276,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* Sidebar - 4 columns */}
           <div className="xl:col-span-4 space-y-8">
             <Card className="glass-card rounded-3xl border-0 overflow-hidden">
               <CardHeader className="bg-white/5 pb-4">
@@ -324,27 +314,17 @@ export default function Home() {
                   </div>
                   <Progress value={94} className="h-2 bg-white/5" />
                 </div>
-                <div className="pt-2">
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest leading-loose">
-                      System Status: <span className="text-emerald-500">Optimal</span><br/>
-                      Last Sync: <span className="text-slate-300">Just now</span><br/>
-                      Node: <span className="text-slate-300">Global Primary</span>
-                    </p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* Footer */}
         <footer className="mt-8 mb-4 flex flex-col items-center gap-6">
           <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           <div className="flex flex-col md:flex-row items-center justify-between w-full gap-4 text-slate-500 text-[10px] md:text-xs uppercase tracking-[0.2em]">
             <p>© 2024 developed by Suruti Sona Lab</p>
             <div className="flex gap-8">
-              <a href="#" className="hover:text-primary transition-colors">Privacy Protcol</a>
+              <a href="#" className="hover:text-primary transition-colors">Privacy Protocol</a>
               <a href="#" className="hover:text-primary transition-colors">Documentation</a>
               <a href="#" className="hover:text-primary transition-colors">Developer API</a>
             </div>
@@ -354,6 +334,3 @@ export default function Home() {
     </div>
   );
 }
-
-// Helper to avoid interface mismatch in main component
-CameraCapture.Icon = Activity;
