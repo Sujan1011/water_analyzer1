@@ -1,3 +1,16 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-water",
+      "description": "Clean water surface with ripples",
+      "imageUrl": "https://picsum.photos/seed/water1/1200/600",
+      "imageHint": "clean water"
+    },
+    {
+      "id": "test-strip-example",
+      "description": "A person holding a water test strip",
+      "imageUrl": "https://picsum.photos/seed/teststrip/600/400",
+      "imageHint": "chemistry lab"
+    }
+  ]
 }
