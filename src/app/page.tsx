@@ -20,6 +20,7 @@ import { Toaster } from '@/components/ui/toaster';
 export default function Home() {
   const { toast } = useToast();
   const [selectedTest, setSelectedTest] = useState<TestType | null>(null);
+  const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [afterImage, setAfterImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<WaterQualityTestOutput | null>(null);
@@ -38,11 +39,20 @@ export default function Home() {
   }, []);
 
   const handleAnalyze = async () => {
-    if (!selectedTest || !afterImage) {
+    if (!selectedTest) {
       toast({
         variant: 'destructive',
-        title: 'Missing Data',
-        description: 'Please select a test type and capture a photo of the test strip.',
+        title: 'Missing Selection',
+        description: 'Please select a parameter to test.',
+      });
+      return;
+    }
+
+    if (!beforeImage || !afterImage) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Documentation',
+        description: 'Both "Before" (Reference) and "After" (Analyte) images are required for professional analysis.',
       });
       return;
     }
@@ -51,7 +61,7 @@ export default function Home() {
     setResult(null);
 
     try {
-      // 1. Color Extraction
+      // 1. Color Extraction from the 'After' image (the reacted strip)
       const [r, g, b] = await getDominantColor(afterImage);
       const closest = findClosestColor(selectedTest, r, g, b);
       
@@ -89,7 +99,7 @@ export default function Home() {
 
       toast({
         title: 'Analysis Successful',
-        description: `${selectedTest} analysis completed.`,
+        description: `${selectedTest} interpretation completed.`,
       });
 
     } catch (error: any) {
@@ -97,7 +107,7 @@ export default function Home() {
       toast({
         variant: 'destructive',
         title: 'Diagnostic Error',
-        description: error.message || 'Could not process the image. Please try again with a clearer photo.',
+        description: error.message || 'Could not process the images. Please ensure strips are centered.',
       });
     } finally {
       setIsAnalyzing(false);
@@ -175,28 +185,39 @@ export default function Home() {
             <section className="space-y-4">
               <div className="flex items-center gap-2 px-2">
                 <Camera size={16} className="text-accent" />
-                <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Strip Analysis</h2>
+                <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Optical Documentation</h2>
               </div>
-              <div className="max-w-2xl">
-                <CameraCapture label="Analyte Strip Feed" image={afterImage} onCapture={setAfterImage} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <CameraCapture 
+                  label="1. Baseline Reference (Before)" 
+                  image={beforeImage} 
+                  onCapture={setBeforeImage} 
+                  description="Dry strip or clear water source"
+                />
+                <CameraCapture 
+                  label="2. Analyte Strip (After)" 
+                  image={afterImage} 
+                  onCapture={setAfterImage} 
+                  description="Reacted strip after immersion"
+                />
               </div>
             </section>
 
             <div className="flex flex-col items-center gap-6 pt-4">
               <Button
-                disabled={!selectedTest || !afterImage || isAnalyzing}
+                disabled={!selectedTest || !beforeImage || !afterImage || isAnalyzing}
                 onClick={handleAnalyze}
                 size="lg"
                 className={cn(
                   "w-full max-w-md h-14 rounded-2xl text-lg font-headline font-bold transition-all relative overflow-hidden group shadow-2xl",
-                  !isAnalyzing && "bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white",
-                  isAnalyzing && "bg-slate-800 text-slate-500 cursor-not-allowed"
+                  !isAnalyzing && (selectedTest && beforeImage && afterImage) && "bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white",
+                  (isAnalyzing || !selectedTest || !beforeImage || !afterImage) && "bg-slate-800 text-slate-500 cursor-not-allowed"
                 )}
               >
                 {isAnalyzing ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    Analyzing Chemistry...
+                    Comparative Analysis...
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -206,6 +227,11 @@ export default function Home() {
                   </div>
                 )}
               </Button>
+              {(!beforeImage || !afterImage) && selectedTest && (
+                <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold animate-pulse">
+                  Both visual captures required to proceed
+                </p>
+              )}
             </div>
 
             {result && detectedValue && (
@@ -281,7 +307,7 @@ export default function Home() {
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-2">
                   <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                    <span>Diagnostic Precision</span>
+                    <span>Optical Precision</span>
                     <span className="text-accent">99.9%</span>
                   </div>
                   <Progress value={99.9} className="h-1 bg-white/5" />
