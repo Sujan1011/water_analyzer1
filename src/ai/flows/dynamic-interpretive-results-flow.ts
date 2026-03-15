@@ -29,14 +29,15 @@ export type WaterQualityTestOutput = z.infer<typeof WaterQualityTestOutputSchema
 
 const interpretWaterQualityPrompt = ai.definePrompt({
   name: 'interpretWaterQualityPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: WaterQualityTestInputSchema },
   output: { schema: WaterQualityTestOutputSchema },
   config: {
     safetySettings: [
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
     ],
   },
   system: `You are an expert water quality analyst. You are provided with chemical test strip data. 
