@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Camera, Upload, Trash2, CheckCircle, RefreshCcw, AlertCircle, FlipHorizontal } from 'lucide-react';
+import { Camera, Upload, Trash2, CheckCircle, RefreshCcw, FlipHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface CameraCaptureProps {
   label: string;
@@ -19,7 +18,6 @@ interface CameraCaptureProps {
 export function CameraCapture({ label, onCapture, image, description }: CameraCaptureProps) {
   const { toast } = useToast();
   const [showCamera, setShowCamera] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,40 +36,40 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
   }, []);
 
   const startCamera = async (mode: 'environment' | 'user' = facingMode) => {
-    // Stop any existing stream first
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
     }
 
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API not supported in this environment.');
-      }
-
       const constraints = {
         video: {
           facingMode: mode,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         },
         audio: false
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
       streamRef.current = stream;
-      setHasCameraPermission(true);
       setShowCamera(true);
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(e => console.error("Video play failed:", e));
+        // Important for mobile: explicitly call play()
+        try {
+          await videoRef.current.play();
+        } catch (e) {
+          console.error("Autoplay failed:", e);
+        }
       }
-      
     } catch (err) {
       console.error('Camera Access Error:', err);
-      setHasCameraPermission(false);
-      // We don't toast here anymore to avoid annoying the user if they prefer Upload
+      toast({
+        variant: 'destructive',
+        title: 'Camera Access Required',
+        description: 'Please enable camera permissions in your browser or app settings.',
+      });
     }
   };
 
@@ -99,11 +97,6 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         const dataUrl = canvasRef.current.toDataURL('image/png');
         onCapture(dataUrl);
         stopCamera();
-        
-        toast({
-          title: 'Capture Verified',
-          description: `${label} documented successfully.`,
-        });
       }
     }
   };
@@ -115,8 +108,8 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       reader.onloadend = () => {
         onCapture(reader.result as string);
         toast({
-          title: 'Image Verified',
-          description: `${label} image loaded successfully.`,
+          title: 'Image Loaded',
+          description: `${label} documented successfully.`,
         });
       };
       reader.readAsDataURL(file);
@@ -137,7 +130,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         <div className="flex flex-col gap-1 px-1">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-headline font-bold uppercase tracking-widest text-slate-400">{label}</h3>
-            {image && <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-400 border-0 h-5 px-2 text-[8px]">VALIDATED</Badge>}
+            {image && <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-400 border-0 h-5 px-2 text-[8px]">READY</Badge>}
           </div>
           {description && <p className="text-[10px] text-slate-500 font-medium">{description}</p>}
         </div>
@@ -162,7 +155,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
               <div className="p-4 rounded-full bg-white/5 border border-white/5">
                 <Camera size={32} strokeWidth={1.5} />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Capture Ready</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Ready for Capture</p>
             </div>
           ) : null}
 
@@ -184,14 +177,14 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
             <>
               <Button 
                 variant="secondary" 
-                className="flex-1 h-12 rounded-xl bg-white/10 hover:bg-white/20 text-white border-0 transition-all active:scale-95 text-xs font-bold uppercase tracking-widest" 
+                className="flex-1 h-12 rounded-xl bg-white/10 hover:bg-white/20 text-white border-0 transition-all text-[10px] font-bold uppercase tracking-widest" 
                 onClick={() => startCamera()}
               >
-                <Camera className="mr-2 h-4 w-4" /> Live Feed
+                <Camera className="mr-2 h-4 w-4 text-primary" /> Live Feed
               </Button>
               <Button 
                 variant="secondary" 
-                className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-white border-0 transition-all active:scale-95 text-xs font-bold uppercase tracking-widest" 
+                className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-white border-0 transition-all text-[10px] font-bold uppercase tracking-widest" 
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="mr-2 h-4 w-4" /> Camera / Upload
@@ -211,7 +204,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
             <div className="flex gap-2 w-full">
               <Button 
                 variant="default" 
-                className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-xl text-xs font-bold uppercase tracking-widest" 
+                className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-xl text-[10px] font-bold uppercase tracking-widest" 
                 onClick={captureFrame}
               >
                 Capture Photo
@@ -238,10 +231,10 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
           {image && (
             <Button 
               variant="destructive" 
-              className="w-full h-12 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border-0 transition-all text-xs font-bold uppercase tracking-widest" 
+              className="w-full h-12 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border-0 transition-all text-[10px] font-bold uppercase tracking-widest" 
               onClick={() => onCapture(null)}
             >
-              <Trash2 className="mr-2 h-4 w-4" /> Clear Image
+              <Trash2 className="mr-2 h-4 w-4" /> Reset documentation
             </Button>
           )}
         </div>

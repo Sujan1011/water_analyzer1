@@ -16,24 +16,25 @@ function localDiagnosticAnalysis(input: WaterQualityTestInput): WaterQualityTest
 
   switch (testType) {
     case 'pH': {
+      // Direct comparison and classification as requested
       const acidityType = value < 7 ? 'Acidic' : value > 7 ? 'Base (Alkaline)' : 'Neutral';
       const safeMin = 6.5;
       const safeMax = 8.5;
       
       if (value < 6.0 || value > 9.0) {
         safetyLevel = 'Critical';
-        explanation = `Diagnostic Status: ${acidityType}. The detected pH of ${value} is a critical deviation from the neutral standard (7.0). Compared to the safe consumption range of ${safeMin}–${safeMax}, this water is ${value < 7 ? 'highly corrosive' : 'excessively alkaline'} and may damage plumbing or irritate skin.`;
-        recommendation = 'Immediate adjustment is required. Use a pH stabilizer and re-test in 2 hours. Do not consume.';
+        explanation = `Analysis Result: ${acidityType}. The pH level of ${value} is a critical deviation. In comparison to the safe range of ${safeMin}–${safeMax}, this water is excessively ${value < 7 ? 'acidic and corrosive' : 'alkaline'} which can cause serious health and infrastructure issues.`;
+        recommendation = 'Immediate chemical balancing required. Do not use for drinking or skin contact.';
         emojis = '🔴';
       } else if (value < safeMin || value > safeMax) {
         safetyLevel = 'Warning';
-        explanation = `Diagnostic Status: ${acidityType}. A pH of ${value} shows a moderate imbalance. While ${acidityType}, it falls just outside the optimal ${safeMin}–${safeMax} range. This can lead to bitter taste or minor pipe scaling over long periods.`;
-        recommendation = 'Monitor the source water. Consider a neutralizing filter to bring the levels closer to 7.0.';
+        explanation = `Analysis Result: ${acidityType}. The pH of ${value} is outside the optimal ${safeMin}–${safeMax} range. While not immediately toxic, it is classified as ${acidityType} and may cause minor irritation or scale build-up over time.`;
+        recommendation = 'Consider using a neutralizing filter to restore the balance closer to 7.0 (Neutral).';
         emojis = '⚠️';
       } else {
         safetyLevel = 'Safe';
-        explanation = `Diagnostic Status: ${acidityType} (Optimal). The water maintains a healthy balance at ${value} pH. This is well within the international safety range (${safeMin}–${safeMax}) and is ideal for domestic use.`;
-        recommendation = 'No action required. This level provides the best protection for your pipes and appliances.';
+        explanation = `Analysis Result: ${acidityType} (Balanced). The pH level of ${value} is well within the international safety standard range of ${safeMin}–${safeMax}. This water is chemically balanced and safe for all household uses.`;
+        recommendation = 'Levels are optimal. Continue regular maintenance and monitoring.';
         emojis = '✅';
       }
       break;
@@ -43,18 +44,18 @@ function localDiagnosticAnalysis(input: WaterQualityTestInput): WaterQualityTest
       const safeLimit = 0.3;
       if (value > 1.0) {
         safetyLevel = 'Critical';
-        explanation = `Detection Analysis: Severe concentration. At ${value} mg/L, the level is over 3x higher than the secondary safety standard (${safeLimit} mg/L). This causes metallic taste, visible staining, and potential bacterial nesting in pipes.`;
-        recommendation = 'Install an iron oxidation system or a dedicated sediment filter immediately.';
+        explanation = `Detection: Excessive Iron concentration. At ${value} mg/L, it significantly exceeds the secondary safety limit of ${safeLimit} mg/L. This will cause severe metallic taste, red/brown staining, and potential bacterial growth.`;
+        recommendation = 'A whole-house iron removal system is required immediately.';
         emojis = '🔴';
       } else if (value >= safeLimit) {
         safetyLevel = 'Warning';
-        explanation = `Detection Analysis: Elevated levels. The detected ${value} mg/L exceeds the aesthetic threshold of ${safeLimit} mg/L. You may notice "rusty" tinting on fixtures and a slight metallic aftertaste.`;
-        recommendation = 'Consider a whole-house carbon filter to reduce trace metallic content.';
+        explanation = `Detection: Elevated Iron. The detected ${value} mg/L is above the aesthetic threshold of ${safeLimit} mg/L. You may experience slight metallic odor and staining on laundry or fixtures.`;
+        recommendation = 'Consider a carbon-based filtration system to reduce trace metallic content.';
         emojis = '⚠️';
       } else {
         safetyLevel = 'Safe';
-        explanation = `Detection Analysis: Trace/Negligible. At ${value} mg/L, the concentration is well below the ${safeLimit} mg/L limit. The water remains clear and free from metallic contaminants.`;
-        recommendation = 'Maintain current filtration. These levels are excellent for drinking and laundry.';
+        explanation = `Detection: Minimal Iron. At ${value} mg/L, the level is well below the ${safeLimit} mg/L safety standard. The water remains clear and odorless.`;
+        recommendation = 'Perfect for drinking and general household use.';
         emojis = '✅';
       }
       break;
@@ -65,18 +66,18 @@ function localDiagnosticAnalysis(input: WaterQualityTestInput): WaterQualityTest
       const hardLimit = 180;
       if (value > hardLimit) {
         safetyLevel = 'Critical';
-        explanation = `Mineral Profile: Very Hard. The detected ${value} mg/L significantly exceeds the "soft" threshold of ${softLimit} mg/L. Compared to balanced water, this will cause rapid scale buildup in water heaters and reduce appliance life by 30-50%.`;
-        recommendation = 'A high-capacity ion-exchange water softener is strongly recommended.';
+        explanation = `Mineral Profile: Very Hard. The level of ${value} mg/L is well above the recommended limit. This will cause rapid limescale buildup, damage water heaters, and significantly reduce appliance lifespan.`;
+        recommendation = 'Installation of a high-capacity water softener is strongly advised.';
         emojis = '🔴';
       } else if (value > softLimit) {
         safetyLevel = 'Warning';
-        explanation = `Mineral Profile: Hard. At ${value} mg/L, the water is above the ideal limit. While safe to drink, it will leave white mineral deposits (limescale) on glassware and faucets over time.`;
-        recommendation = 'Use rinse aids in dishwashers and monitor for scale on showerheads.';
+        explanation = `Mineral Profile: Hard. At ${value} mg/L, the water is moderately hard. While safe to drink, it will leave mineral deposits on glassware and reduce soap effectiveness.`;
+        recommendation = 'Monitor scale buildup in faucets and consider a localized softening solution.';
         emojis = '⚠️';
       } else {
         safetyLevel = 'Safe';
-        explanation = `Mineral Profile: Soft/Balanced. The detected ${value} mg/L is within the ideal range. This ensures your appliances run efficiently and soap lathers perfectly without scale issues.`;
-        recommendation = 'Perfect for standard use. No softening treatment required.';
+        explanation = `Mineral Profile: Soft/Balanced. The detected ${value} mg/L is within the ideal range. This ensures efficient operation of appliances and prevents scale formation.`;
+        recommendation = 'Excellent quality. No softening treatment needed.';
         emojis = '✅';
       }
       break;
@@ -87,18 +88,18 @@ function localDiagnosticAnalysis(input: WaterQualityTestInput): WaterQualityTest
       const criticalMax = 4.0;
       if (value > criticalMax) {
         safetyLevel = 'Critical';
-        explanation = `Purity Analysis: Excessive Residual. At ${value} mg/L, the concentration exceeds the EPA maximum contaminant level goal of ${criticalMax} mg/L. This is chemically aggressive and can cause respiratory irritation.`;
-        recommendation = 'Stop consumption. Use an activated carbon filter or allow the water to aerate to dissipate chlorine.';
+        explanation = `Purity: Excessive Chlorine. At ${value} mg/L, it exceeds the EPA maximum safety goal. This can cause harsh odors and potential respiratory or skin irritation.`;
+        recommendation = 'Stop consumption immediately. Use an activated carbon filter to remove excess chlorine.';
         emojis = '🔴';
       } else if (value >= idealMax) {
         safetyLevel = 'Warning';
-        explanation = `Purity Analysis: High Residual. The detected ${value} mg/L is safe from a bacterial standpoint but significantly higher than the ideal ${idealMax} mg/L for taste and odor.`;
-        recommendation = 'An inline carbon block filter will easily remove this excess "bleach" taste.';
+        explanation = `Purity: High Chlorine. The detected ${value} mg/L is safe from bacteria but notably high for drinking water, affecting taste and odor significantly.`;
+        recommendation = 'Allow water to sit or use a standard pitcher filter to improve taste.';
         emojis = '⚠️';
       } else {
         safetyLevel = 'Safe';
-        explanation = `Purity Analysis: Optimal Disinfection. The detected ${value} mg/L provides a safe residual for pathogen protection without affecting taste or safety.`;
-        recommendation = 'No action required. This indicates well-maintained disinfection protocols.';
+        explanation = `Purity: Optimal Chlorine. The level of ${value} mg/L provides effective disinfection without compromising taste or safety.`;
+        recommendation = 'Ideal levels for domestic water supply.';
         emojis = '✅';
       }
       break;
@@ -106,7 +107,7 @@ function localDiagnosticAnalysis(input: WaterQualityTestInput): WaterQualityTest
   }
 
   return {
-    explanation: `${explanation} (Reference Color: ${colorDetected})`,
+    explanation: `${explanation} (Detected via: ${colorDetected})`,
     recommendation,
     safetyLevel,
     emojis
@@ -114,14 +115,14 @@ function localDiagnosticAnalysis(input: WaterQualityTestInput): WaterQualityTest
 }
 
 export async function interpretResults(input: WaterQualityTestInput): Promise<WaterQualityTestOutput> {
-  // Simulate network latency for UX
-  await new Promise(resolve => setTimeout(resolve, 800));
+  // Artificial delay for UX
+  await new Promise(resolve => setTimeout(resolve, 1000));
   
   try {
-    // We use the local engine for production reliability on Vercel without API keys
+    // Local processing for speed, reliability, and no-cost usage on Vercel
     return localDiagnosticAnalysis(input);
   } catch (error: any) {
     console.error('Diagnostic Engine Error:', error);
-    throw new Error('Analysis Engine encountered an unexpected error.');
+    throw new Error('The diagnostic engine encountered an error while analyzing the color data.');
   }
 }
