@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Camera, Upload, Trash2, CheckCircle, RefreshCcw, FlipHorizontal, AlertTriangle } from 'lucide-react';
+import { Camera, Upload, Trash2, CheckCircle, RefreshCcw, FlipHorizontal, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -38,12 +38,13 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
   }, []);
 
   const startCamera = async (mode: 'environment' | 'user' = facingMode) => {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
+    // 1. Check if mediaDevices API is available (often missing in old WebViews or non-HTTPS)
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setHasCameraPermission(false);
       toast({
         variant: 'destructive',
-        title: 'Hardware Access Denied',
-        description: 'Your browser or app wrapper does not support live camera streaming. Please use the "System Cam" button instead.',
+        title: 'Live Feed Unsupported',
+        description: 'The app wrapper restricts live video. Please use the "System Camera" button.',
       });
       return;
     }
@@ -68,6 +69,8 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Important: playsInline is key for mobile WebViews
+        videoRef.current.setAttribute('playsinline', 'true');
         await videoRef.current.play();
       }
       setIsActive(true);
@@ -76,8 +79,8 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       setHasCameraPermission(false);
       toast({
         variant: 'destructive',
-        title: 'Camera Blocked',
-        description: 'Could not access the live feed. This is common in Android apps. Please use the "System Cam / Upload" button.',
+        title: 'Camera Access Denied',
+        description: 'Could not start live feed. This is common in Android apps. Use the System Camera instead.',
       });
       setIsActive(false);
     }
@@ -122,8 +125,8 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       reader.onloadend = () => {
         onCapture(reader.result as string);
         toast({
-          title: 'Documented',
-          description: `${label} captured via system camera.`,
+          title: 'Photo Captured',
+          description: `${label} documented successfully.`,
         });
       };
       reader.readAsDataURL(file);
@@ -144,12 +147,13 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         <div className="flex flex-col gap-1 px-1">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-headline font-bold uppercase tracking-widest text-slate-400">{label}</h3>
-            {image && <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-400 border-0 h-5 px-2 text-[8px]">VALIDATED</Badge>}
+            {image && <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-400 border-0 h-5 px-2 text-[8px]">CAPTURED</Badge>}
           </div>
           {description && <p className="text-[10px] text-slate-500 font-medium">{description}</p>}
         </div>
         
-        <div className="relative w-full aspect-video bg-[#05070a] rounded-2xl flex items-center justify-center overflow-hidden border border-white/5 shadow-inner">
+        <div className="relative w-full aspect-video bg-black rounded-2xl flex items-center justify-center overflow-hidden border border-white/5 shadow-inner">
+          {/* Live Video Tag - Always defined to prevent race conditions */}
           <video 
             ref={videoRef} 
             autoPlay 
@@ -169,19 +173,24 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
               <div className="p-4 rounded-full bg-white/5 border border-white/5">
                 <Camera size={32} strokeWidth={1.5} />
               </div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em]">Android App Mode: Use System Cam for best results</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500 max-w-[200px]">
+                Ready for Documentation
+              </p>
             </div>
           ) : null}
 
-          {hasCameraPermission === false && !image && !isActive && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-6">
-              <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive-foreground">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle className="text-xs font-bold uppercase tracking-wider">Access Restricted</AlertTitle>
-                <AlertDescription className="text-[10px] leading-relaxed">
-                  The live feed is blocked by the app wrapper. Use the <b>System Cam</b> button below to take a photo.
-                </AlertDescription>
-              </Alert>
+          {/* Fallback Warning for WebViews */}
+          {hasCameraPermission === false && !image && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 p-6">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <AlertCircle className="text-rose-500 h-10 w-10 animate-pulse" />
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-white uppercase tracking-wider">Camera Restricted</p>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    The app wrapper is blocking the live feed.<br/>Please use <b>System Camera</b> below.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -195,14 +204,16 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         <div className="flex flex-col gap-3 w-full">
           {!image && !isActive && (
             <>
+              {/* PRIMARY ACTION: Native Camera (Most reliable for Android apps) */}
               <Button 
-                variant="secondary" 
+                variant="default" 
                 className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-white border-0 transition-all text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20" 
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="mr-2 h-5 w-5" /> Open System Camera
               </Button>
               
+              {/* SECONDARY ACTION: Live Feed (May fail in WebViews) */}
               <Button 
                 variant="ghost" 
                 className="w-full h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 border-0 transition-all text-[9px] font-bold uppercase tracking-widest" 
