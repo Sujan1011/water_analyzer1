@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface CameraCaptureProps {
   label: string;
@@ -64,7 +63,6 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.setAttribute('playsinline', 'true');
-        // Small delay to ensure the video tag is ready to play
         setTimeout(() => {
           videoRef.current?.play().catch(e => console.error("Play error:", e));
         }, 100);
@@ -76,7 +74,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       toast({
         variant: 'destructive',
         title: 'Live Feed Restricted',
-        description: 'The app wrapper is blocking live video. Use "Open System Camera" instead.',
+        description: 'The app wrapper is blocking live video. Please use the "Open System Camera" button instead.',
       });
       setIsActive(false);
     }
@@ -149,7 +147,6 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         </div>
         
         <div className="relative w-full aspect-video bg-black rounded-2xl flex items-center justify-center overflow-hidden border border-white/5 shadow-inner">
-          {/* Video tag ALWAYS shown to prevent race conditions on mobile */}
           <video 
             ref={videoRef} 
             autoPlay 
@@ -175,15 +172,15 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
             </div>
           ) : null}
 
-          {/* User Feedback for Restricted WebViews */}
-          {hasCameraPermission === false && !image && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 p-6 backdrop-blur-md">
+          {/* Fallback View for Android Wrappers */}
+          {hasCameraPermission === false && !image && !isActive && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 p-6 backdrop-blur-sm">
               <div className="flex flex-col items-center gap-4 text-center">
                 <AlertCircle className="text-rose-500 h-10 w-10 animate-pulse" />
                 <div className="space-y-2">
-                  <p className="text-xs font-bold text-white uppercase tracking-wider">Camera Restricted</p>
+                  <p className="text-xs font-bold text-white uppercase tracking-wider">Live Feed Blocked</p>
                   <p className="text-[10px] text-slate-400 leading-relaxed">
-                    Android wrappers often block live video feeds for security.<br/>Please use <b>Open System Camera</b> below.
+                    Your app wrapper restricted direct camera access. <br/> Use <b>Open System Camera</b> below to proceed.
                   </p>
                 </div>
               </div>
@@ -200,7 +197,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         <div className="flex flex-col gap-3 w-full">
           {!image && (
             <>
-              {/* PRIMARY ACTION: Direct System Camera Access */}
+              {/* PRIMARY ACTION for Android apps */}
               <Button 
                 variant="default" 
                 className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-white border-0 transition-all text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20" 
