@@ -38,14 +38,8 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
   }, []);
 
   const startCamera = async (mode: 'environment' | 'user' = facingMode) => {
-    // 1. Check if mediaDevices API is available (often missing in old WebViews or non-HTTPS)
     if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setHasCameraPermission(false);
-      toast({
-        variant: 'destructive',
-        title: 'Live Feed Unsupported',
-        description: 'The app wrapper restricts live video. Please use the "System Camera" button.',
-      });
       return;
     }
 
@@ -69,9 +63,11 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Important: playsInline is key for mobile WebViews
         videoRef.current.setAttribute('playsinline', 'true');
-        await videoRef.current.play();
+        // Small delay to ensure the video tag is ready to play
+        setTimeout(() => {
+          videoRef.current?.play().catch(e => console.error("Play error:", e));
+        }, 100);
       }
       setIsActive(true);
     } catch (err) {
@@ -79,8 +75,8 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
       setHasCameraPermission(false);
       toast({
         variant: 'destructive',
-        title: 'Camera Access Denied',
-        description: 'Could not start live feed. This is common in Android apps. Use the System Camera instead.',
+        title: 'Live Feed Restricted',
+        description: 'The app wrapper is blocking live video. Use "Open System Camera" instead.',
       });
       setIsActive(false);
     }
@@ -153,7 +149,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         </div>
         
         <div className="relative w-full aspect-video bg-black rounded-2xl flex items-center justify-center overflow-hidden border border-white/5 shadow-inner">
-          {/* Live Video Tag - Always defined to prevent race conditions */}
+          {/* Video tag ALWAYS shown to prevent race conditions on mobile */}
           <video 
             ref={videoRef} 
             autoPlay 
@@ -179,15 +175,15 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
             </div>
           ) : null}
 
-          {/* Fallback Warning for WebViews */}
+          {/* User Feedback for Restricted WebViews */}
           {hasCameraPermission === false && !image && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 p-6">
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 p-6 backdrop-blur-md">
               <div className="flex flex-col items-center gap-4 text-center">
                 <AlertCircle className="text-rose-500 h-10 w-10 animate-pulse" />
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-white uppercase tracking-wider">Camera Restricted</p>
                   <p className="text-[10px] text-slate-400 leading-relaxed">
-                    The app wrapper is blocking the live feed.<br/>Please use <b>System Camera</b> below.
+                    Android wrappers often block live video feeds for security.<br/>Please use <b>Open System Camera</b> below.
                   </p>
                 </div>
               </div>
@@ -202,9 +198,9 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
         </div>
 
         <div className="flex flex-col gap-3 w-full">
-          {!image && !isActive && (
+          {!image && (
             <>
-              {/* PRIMARY ACTION: Native Camera (Most reliable for Android apps) */}
+              {/* PRIMARY ACTION: Direct System Camera Access */}
               <Button 
                 variant="default" 
                 className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-white border-0 transition-all text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20" 
@@ -213,14 +209,15 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
                 <Upload className="mr-2 h-5 w-5" /> Open System Camera
               </Button>
               
-              {/* SECONDARY ACTION: Live Feed (May fail in WebViews) */}
-              <Button 
-                variant="ghost" 
-                className="w-full h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 border-0 transition-all text-[9px] font-bold uppercase tracking-widest" 
-                onClick={() => startCamera()}
-              >
-                <Camera className="mr-2 h-4 w-4" /> Try Live Feed
-              </Button>
+              {!isActive && (
+                <Button 
+                  variant="ghost" 
+                  className="w-full h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 border-0 transition-all text-[9px] font-bold uppercase tracking-widest" 
+                  onClick={() => startCamera()}
+                >
+                  <Camera className="mr-2 h-4 w-4" /> Try Live Feed
+                </Button>
+              )}
               
               <input 
                 type="file" 
@@ -267,7 +264,7 @@ export function CameraCapture({ label, onCapture, image, description }: CameraCa
               className="w-full h-12 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border-0 transition-all text-[10px] font-bold uppercase tracking-widest" 
               onClick={() => onCapture(null)}
             >
-              <Trash2 className="mr-2 h-4 w-4" /> Reset photo
+              <Trash2 className="mr-2 h-4 w-4" /> Reset documentation
             </Button>
           )}
         </div>
