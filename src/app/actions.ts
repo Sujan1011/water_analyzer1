@@ -16,7 +16,7 @@ function localDiagnosticAnalysis(input: WaterQualityTestInput): WaterQualityTest
 
   switch (testType) {
     case 'pH': {
-      // Direct comparison and classification as requested
+      // Direct comparison and classification as requested: Acidic vs Base
       const acidityType = value < 7 ? 'Acidic' : value > 7 ? 'Base (Alkaline)' : 'Neutral';
       const safeMin = 6.5;
       const safeMax = 8.5;
